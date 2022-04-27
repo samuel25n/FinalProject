@@ -3,8 +3,7 @@ package TarsinApp;
 import TarsinApp.entity.Appointment;
 import TarsinApp.entity.Client;
 import TarsinApp.repository.AppointmentRepository;
-import TarsinApp.rest.AppointmentController;
-import TarsinApp.rest.ClientController;
+import TarsinApp.repository.ClientRepository;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,6 +13,8 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.w3c.dom.Text;
 
 import java.util.Date;
@@ -21,14 +22,17 @@ import java.util.Date;
 @SpringBootApplication
 public class FinalProjectApplication extends Application {
 
+    static AppointmentRepository appointmentRepository;
+    static ClientRepository clientRepository;
+
+
     public static void main(String[] args) {
-        Application.launch();
+        ConfigurableApplicationContext appContext = SpringApplication.run(FinalProjectApplication.class, args);
+        appointmentRepository = appContext.getBean(AppointmentRepository.class);
+        clientRepository = appContext.getBean(ClientRepository.class);
+        launch(args);
     }
 
-    @Override
-    public void init() {
-        SpringApplication.run(getClass()).getAutowireCapableBeanFactory().autowireBean(this);
-    }
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -37,12 +41,10 @@ public class FinalProjectApplication extends Application {
         Client buttonClient = new Client();
         Appointment appointmentClient = new Appointment();
 
-        AppointmentController appointmentController = new AppointmentController();
-        ClientController clientController = new ClientController();
 
-
-       ObservableList<Appointment> observableList = FXCollections.observableArrayList(appointmentController.getAllAppointments());
-       ListView<Appointment> listView = new ListView<>();
+        ObservableList<Appointment> observableList = FXCollections.observableArrayList(appointmentRepository.findAll());
+        ListView<Appointment> listView = new ListView<>(observableList);
+        
 
 
         Button addAppointmentButton = new Button("Aaduga Programare");
@@ -90,11 +92,12 @@ public class FinalProjectApplication extends Application {
         gridPane.add(dateComingDatePicker, 2, 1);
         gridPane.add(deleteAppointmentButton, 2, 4);
 
-        gridPane.add(listView,1,9);
+        gridPane.add(listView, 1, 9);
 
 
         addAppointmentButton.setOnAction(x -> {
             if (nameTextField != null && goFromTextField != null && phoneTextField != null && goToTextField != null) {
+
 
                 buttonClient.setFullName(nameTextField.getText());
                 buttonClient.setPhoneNumber(phoneTextField.getText());
@@ -105,15 +108,15 @@ public class FinalProjectApplication extends Application {
                 appointmentClient.setGoTo(goToTextField.getText());
                 buttonClient.setAppointment(appointmentClient);
 
-                clientController.saveClient(buttonClient);
+                clientRepository.save(buttonClient);
+
+
             } else try {
                 throw new Exception("Completati toate campurile");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-
-
 
 
         Scene scene = new Scene(gridPane, 800, 500);

@@ -6,6 +6,7 @@ import lombok.ToString;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
+import java.util.UUID;
 
 @Entity
 @ToString
@@ -16,7 +17,7 @@ public class Client {
 
     @Id
     @GeneratedValue
-    private int id;
+    private Integer id;
 
     private String fullName;
     private String phoneNumber;

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @ToString
@@ -20,7 +21,7 @@ public class Appointment {
 
     @Id
     @GeneratedValue
-    private int id;
+    private Integer id;
     private String goTo;
     private String startFrom;
     @DateTimeFormat(pattern = "dd-MM-yyyy")
