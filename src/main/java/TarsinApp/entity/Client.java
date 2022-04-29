@@ -3,10 +3,8 @@ package TarsinApp.entity;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
-import java.util.UUID;
 
 @Entity
 @ToString
@@ -21,40 +19,8 @@ public class Client {
 
     private String fullName;
     private String phoneNumber;
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "appointment_id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "appointment_going_id")
     private Appointment appointment;
 
-    public Appointment getAppointment() {
-        return appointment;
-    }
-
-    //----------------------GETTERS AND SETTERS
-
-
-//    public int getId() {
-//        return id;
-//    }
-//
-//    public String getFullName() {
-//        return fullName;
-//    }
-//
-//    public void setFullName(String fullName) {
-//        this.fullName = fullName;
-//    }
-//
-//    public String getPhoneNumber() {
-//        return phoneNumber;
-//    }
-//
-//    public void setPhoneNumber(String phoneNumber) {
-//        this.phoneNumber = phoneNumber;
-//    }
-//
-//    public void setAppointment(Appointment appointment) {
-//        this.appointment = appointment;
-//    }
-
-    //----------------------------------------
 }

@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@ToString
 @Getter
 @Setter
 
@@ -35,45 +34,13 @@ public class Appointment {
     @JoinColumn(name = "client_id")
     Client client;
 
-
-
-    //-------------------------- GETTERS AND SETTERS
-
-//    public int getId() {
-//        return id;
-//    }
-//
-//    public String getGoTo() {
-//        return goTo;
-//    }
-//
-//    public void setGoTo(String goTo) {
-//        this.goTo = goTo;
-//    }
-//
-//    public String getStartFrom() {
-//        return startFrom;
-//    }
-//
-//    public void setStartFrom(String startFrom) {
-//        this.startFrom = startFrom;
-//    }
-//
-//    public LocalDate getDateGoing() {
-//        return dateGoing;
-//    }
-//
-//    public void setDateGoing(LocalDate dateGoing) {
-//        this.dateGoing = dateGoing;
-//    }
-//
-//    public LocalDate getDateComing() {
-//        return dateComing;
-//    }
-//
-//    public void setDateComing(LocalDate dateComing) {
-//        this.dateComing = dateComing;
-//    }
-
-    //--------------------------------------
+    @Override
+    public String toString() {
+        return "" + client.getFullName() +
+                " " + startFrom +
+                " -> " + goTo +
+                " pe " + dateGoing +
+                " retur - " + dateComing
+                ;
+    }
 }

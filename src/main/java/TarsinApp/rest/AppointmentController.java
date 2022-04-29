@@ -18,13 +18,13 @@
 //
 //
 //
-//    @GetMapping(value = "/appointment/all")
+//    @GetMapping(value = "/appointmentGoing/all")
 //    public List<Appointment> getAllAppointments(){
 //        return appointmentRepository.findAll();
 //    }
 //
-//    @PostMapping(value = "/appointment")
-//    public void addAppointment(@RequestBody Appointment appointment){
-//        appointmentRepository.save(appointment);
+//    @PostMapping(value = "/appointmentGoing")
+//    public void addAppointment(@RequestBody Appointment appointmentGoing){
+//        appointmentRepository.save(appointmentGoing);
 //    }
 //}
