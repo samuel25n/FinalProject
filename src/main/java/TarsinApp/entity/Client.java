@@ -23,4 +23,6 @@ public class Client {
     @JoinColumn(name = "appointment_going_id")
     private Appointment appointment;
 
+
+
 }

@@ -30,15 +30,17 @@ public class Appointment {
     @JsonFormat(pattern = "dd-MM-yyyy")
     LocalDate dateComing;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "client_id")
     Client client;
 
     @Override
     public String toString() {
-        return "" + client.getFullName() +
-                " " + startFrom +
-                " -> " + goTo +
+        return ""+
+                " " + client.getFullName() +
+                " " + client.getPhoneNumber() +
+                " " + startFrom.toUpperCase() +
+                " -> " + goTo.toUpperCase() +
                 " pe " + dateGoing +
                 " retur - " + dateComing
                 ;
