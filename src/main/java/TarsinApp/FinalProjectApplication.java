@@ -322,6 +322,11 @@ public class FinalProjectApplication extends Application {
             int appointmentsCOUNT = (int) appointmentRepository.findAll().stream().count();
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Pana acum sunt " + appointmentsCOUNT + " persoane programate");
             alert.show();
+            searchAPPsObservableList.removeAll();
+            seeAPPsLISTVIEW.setItems(searchAPPsObservableList);
+            searchAPPsObservableList.setAll(appointmentRepository.findAll());
+            seeAPPsLISTVIEW.setItems(searchAPPsObservableList);
+
             stage.setScene(searchAppointmentScene);
         });
 
@@ -479,6 +484,13 @@ public class FinalProjectApplication extends Application {
 
                     observableList.remove(listView.getSelectionModel().getSelectedItem());
                     listView.setItems(observableList);
+
+                    nameTextField.clear();
+                    phoneTextField.clear();
+                    goFromTextField.clear();
+                    goToTextField.clear();
+                    dateGoingDatePicker.getEditor().clear();
+                    dateComingDatePicker.getEditor().clear();
 
                 }
             } catch (Exception e) {
