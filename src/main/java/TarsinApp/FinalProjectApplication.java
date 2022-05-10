@@ -1,5 +1,6 @@
 package TarsinApp;
 
+import TarsinApp.Exceptions.EmptyFields;
 import TarsinApp.entity.Appointment;
 import TarsinApp.entity.Client;
 import TarsinApp.entity.User;
@@ -19,23 +20,20 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.annotation.Schedules;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.io.FileOutputStream;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.chrono.ChronoLocalDate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -56,9 +54,59 @@ public class FinalProjectApplication extends Application {
         launch(args);
     }
 
+    // METODA DE AUTOSIZE pentru celulele din fisierul XLS generat de butonul Export
+    public void autoSizeColumns(Workbook workbook) {
+        int numberOfSheets = workbook.getNumberOfSheets();
+        for (int i = 0; i < numberOfSheets; i++) {
+            Sheet sheet = workbook.getSheetAt(i);
+            if (sheet.getPhysicalNumberOfRows() > 0) {
+                Row row = sheet.getRow(sheet.getFirstRowNum());
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while (cellIterator.hasNext()) {
+                    org.apache.poi.ss.usermodel.Cell cell = cellIterator.next();
+                    int columnIndex = cell.getColumnIndex();
+                    sheet.autoSizeColumn(columnIndex);
+                }
+            }
+        }
+    }
+
+    // METODA de trimitere Email cu codul de verificare pentru inregistrarea unui nou User
+    public static void sendMessageCode(int x,String email) {
+        String sendTo = "boolnworld@gmail.com";
+        String host = "smtp.gmail.com";
+        Properties properties = System.getProperties();
+
+        properties.put("mail.smtp.host", host);
+        properties.put("mail.smtp.port", "465");
+        properties.put("mail.smtp.ssl.enable", "true");
+        properties.put("mail.smtp.auth", "true");
+
+        Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication("itschooltesting@gmail.com", "ItSchool123");
+            }
+        });
+
+        session.setDebug(true);
+
+        try {
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(email));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(sendTo));
+            message.setSubject("Cod verificare");
+            message.setText("Buna ziua. Codul dumneavoastra de verificare este " + x + " . Va rugam sa il introduceti in " +
+                    "campul din aplicatie");
+            System.out.println("sending...");
+            Transport.send(message);
+            System.out.println("Sent message successfully....");
+        } catch (MessagingException m) {
+            m.printStackTrace();
+        }
+    }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage)  {
         stage.setTitle("TARSIN Programari");
 
 
@@ -67,6 +115,10 @@ public class FinalProjectApplication extends Application {
 
         LocalDate today = LocalDate.now();
 
+
+
+
+        // Stergere programari vechi la pornirea programului
         Optional<Appointment> optionalAppointment = appointmentRepository.findAll().stream().findFirst();
         if (optionalAppointment.isPresent()) {
             List<Appointment> appointmentList = new ArrayList<>(appointmentRepository.findAll());
@@ -79,62 +131,47 @@ public class FinalProjectApplication extends Application {
             });
         }
 
-        //---------- Creare lista vizibila in program
+        //  Lista vizibila pe pagina unde se adauga programari
 
         ObservableList<Appointment> observableList = FXCollections.observableArrayList(appointmentRepository.findAll());
         ListView<Appointment> listView = new ListView<>(observableList);
         listView.setPrefWidth(450);
 
 
+        // Lista vizibila pe pagina unde cautam programari
+        ObservableList<Appointment> searchAPPsObservableList = FXCollections.observableArrayList(appointmentRepository.findAll());
+        ListView<Appointment> seeAPPsLISTVIEW = new ListView<>(searchAPPsObservableList);
+        seeAPPsLISTVIEW.setPrefWidth(450);
+
+
         //---------------------
+        List<User> userList = new ArrayList<>(userRepository.findAll());
 
-
-        //------------------------
-
+        //---------Butoane
+        Button finishRegisterButton = new Button("Finalizare inregistrare");
+        Button registerREGISTERButton = new Button("Inregistreaza-te");
+        Button loginButton = new Button("Login");
+        Button registerButton = new Button("Register");
+        Button backtologinButton = new Button("Inapoi");
         Button addAppointmentButton = new Button("Aaduga Programare");
         Button deleteAppointmentButton = new Button("Sterge Programare");
         Button searchAppointmentButton = new Button("Cauta");
         Button updateAppointmentButton = new Button("Modifica");
-
         Button exportButton = new Button("Export as CSV");
-
         Button showAllAppointmentsButton = new Button("Arata toate");
-
-
-        //---
-
         Button toAddingButton = new Button("Adauga programari");
-        toAddingButton.setAlignment(Pos.CENTER);
         Button toSearchAppointmentsButton = new Button("Vezi programari");
-        toSearchAppointmentsButton.setAlignment(Pos.CENTER);
-
-
-        Label searchByDATELabel = new Label("Cauta dupa data plecarii");
-        Label searchByGoingLocationLabel = new Label("Cauta dupa destinatie");
-
-        //---
-
         Button backToMainWindowButton = new Button("Inapoi");
-        backToMainWindowButton.autosize();
-        backToMainWindowButton.setStyle("-fx-background-color:#F580A2");
-
-        AnchorPane.setBottomAnchor(backToMainWindowButton, 10.0);
-        AnchorPane.setRightAnchor(backToMainWindowButton, 10.0);
-
         Button backToMainWindowButton1 = new Button("Inapoi");
-        backToMainWindowButton1.autosize();
-        backToMainWindowButton1.setStyle("-fx-background-color:#F580A2");
 
-        AnchorPane.setBottomAnchor(backToMainWindowButton1, 10.0);
-        AnchorPane.setRightAnchor(backToMainWindowButton1, 10.0);
 
-        TextField nameTextField = new TextField();
-        TextField phoneTextField = new TextField();
-        TextField goFromTextField = new TextField();
-        TextField goToTextField = new TextField();
-        DatePicker dateGoingDatePicker = new DatePicker();
-        DatePicker dateComingDatePicker = new DatePicker();
-        DatePicker searchAppointmentsByDatePicker = new DatePicker();
+
+
+        // Labels
+        Label blankLabel4 = new Label("");
+        Label usernameRegisterLabel = new Label("Username:");
+        Label passwordRegisterLabel = new Label("Parola:");
+        Label emailRegisterLabel = new Label("Email:");
         Label nameLabel = new Label("*Nume");
         Label phoneLabel = new Label("*Telefon");
         Label goFromLabel = new Label("*Plecare din");
@@ -142,31 +179,80 @@ public class FinalProjectApplication extends Application {
         Label searchAppointmentLabel = new Label("Vezi programarile pentru data de:");
         Label goingDateLabel = new Label("*Data plecare");
         Label comingDateLabel = new Label("Data intorcere OPTIONAL");
-
         Label principalTitleLabel = new Label("TARSIN");
-        principalTitleLabel.setFont(new Font("Elephant", 40));
-        principalTitleLabel.setTextFill(Color.web("#C70039"));
-
         Label blankLabel = new Label("");
         Label blankLabel2 = new Label("");
         Label blankLabel3 = new Label("");
         Label deleteLabelInfo = new Label("Pentru stergere/editare, selectati client");
+        Label loginUSERNAMElabel = new Label("Nume utilizator");
+        Label loginPASSWORDlabel = new Label("Parola");
+        Label codeLabelRegister = new Label("Introduceti mai jos codul primit prin email");
+
+
+        // TEXTFIELDS
+
+        TextField nameTextField = new TextField();
+        TextField phoneTextField = new TextField();
+        TextField goFromTextField = new TextField();
+        TextField goToTextField = new TextField();
+        TextField loginUSERNAMEtextField = new TextField();
+        TextField emailRegisterTXTField = new TextField();
+        TextField usernameRegisterTXTField = new TextField();
+        TextField register2TXTFieldCODE = new TextField();
+
+
+        //DATEPICKERS
+
+        DatePicker dateGoingDatePicker = new DatePicker();
+        DatePicker dateComingDatePicker = new DatePicker();
+        DatePicker searchAppointmentsByDatePicker = new DatePicker();
+
+
+        // GridPanes
+        GridPane principalWindowGridPane = new GridPane();
+        GridPane loginGridPane = new GridPane();
+        GridPane registerGridPane = new GridPane();
+        GridPane register2Gridpane = new GridPane();
+        GridPane addingAppointmentGridpane = new GridPane();
+        GridPane seeAppointmentsGridPane = new GridPane();
+
+        // Scenes
+
+        Scene searchAppointmentScene = new Scene(seeAppointmentsGridPane, 900, 500);
+        Scene registerScene = new Scene(registerGridPane);
+        Scene register2Scene = new Scene(register2Gridpane,900,500);
+        Scene principalWindowScene = new Scene(principalWindowGridPane);
+        Scene loginScene = new Scene(loginGridPane, 900, 500);
+        Scene AddingAppointmentScene = new Scene(addingAppointmentGridpane, 900, 500);
+
+
+
+
+        backToMainWindowButton1.autosize();
+        backToMainWindowButton1.setStyle("-fx-background-color:#F580A2");
+        backToMainWindowButton.autosize();
+        backToMainWindowButton.setStyle("-fx-background-color:#F580A2");
+        toAddingButton.setAlignment(Pos.CENTER);
+        toSearchAppointmentsButton.setAlignment(Pos.CENTER);
+        principalTitleLabel.setFont(new Font("Elephant", 40));
+        principalTitleLabel.setTextFill(Color.web("#C70039"));
+
+//        Label searchByGoingToLocationLabel = new Label("Cauta dupa destinatie");
+//        TextField searchByGoingToLocationTXTFIELD = new TextField();
+
+
+        AnchorPane.setBottomAnchor(backToMainWindowButton, 10.0);
+        AnchorPane.setRightAnchor(backToMainWindowButton, 10.0);
+        AnchorPane.setBottomAnchor(backToMainWindowButton1, 10.0);
+        AnchorPane.setRightAnchor(backToMainWindowButton1, 10.0);
+
+
+
 
 
         //--------- LOGIN
 
-        Label loginUSERNAMElabel = new Label("Nume utilizator");
-        TextField loginUSERNAMEtextField = new TextField();
-        Label loginPASSWORDlabel = new Label("Parola");
         PasswordField loginPASSWORDtextField = new PasswordField();
-
-
-        Button loginButton = new Button("Login");
-        Button registerButton = new Button("Register");
-
-
-        GridPane loginGridPane = new GridPane();
-
 
         loginGridPane.setPadding(new Insets(40, 40, 40, 40));
         loginGridPane.add(loginUSERNAMElabel, 0, 2);
@@ -176,65 +262,66 @@ public class FinalProjectApplication extends Application {
         loginGridPane.add(loginButton, 0, 6);
         loginGridPane.add(registerButton, 0, 7);
         loginButton.autosize();
-
-
         loginGridPane.add(blankLabel3, 0, 1);
         loginGridPane.setPrefWidth(900);
         loginGridPane.setPrefHeight(500);
         loginGridPane.setAlignment(Pos.CENTER);
-
-
-        List<User> userList = new ArrayList<>(userRepository.findAll());
-//
-
+        loginGridPane.setPadding(new Insets(40, 40, 40, 40));
 
         //---------- REGISTER
 
-        GridPane registerGridPane = new GridPane();
-        loginGridPane.setPadding(new Insets(40, 40, 40, 40));
 
-
-        Label usernameRegisterLabel = new Label("Username:");
-        Label passwordRegisterLabel = new Label("Parola:");
-
-
-        TextField usernameRegisterTXTField = new TextField();
         PasswordField passwordRegisterTXTField = new PasswordField();
-
-        Button registerREGISTERButton = new Button("Inregistreaza-te");
-
 
         registerGridPane.add(usernameRegisterLabel, 0, 2);
         registerGridPane.add(usernameRegisterTXTField, 0, 3);
         registerGridPane.add(passwordRegisterLabel, 0, 4);
         registerGridPane.add(passwordRegisterTXTField, 0, 5);
-        registerGridPane.add(registerREGISTERButton, 0, 6);
-
-
+        registerGridPane.add(emailRegisterLabel, 0, 6);
+        registerGridPane.add(emailRegisterTXTField, 0, 7);
+        registerGridPane.add(registerREGISTERButton, 0, 8);
         registerGridPane.setPrefWidth(900);
         registerGridPane.setPrefHeight(500);
         registerGridPane.setAlignment(Pos.CENTER);
 
 
-        Scene registerScene = new Scene(registerGridPane);
+
+
+
+        //--------- register code
+
+
+
+
+
+
+        finishRegisterButton.autosize();
+
+
+
+
+        register2Gridpane.add(codeLabelRegister, 0, 0);
+        register2Gridpane.add(register2TXTFieldCODE, 0, 1);
+        register2Gridpane.add(finishRegisterButton,0,3);
+        register2Gridpane.add(backtologinButton,0,4);
+
+        register2Gridpane.setAlignment(Pos.CENTER);
+
+
+
 
 
         //-----------------------------------------------------------------------------------------
 
-        ObservableList<Appointment> searchAPPsObservableList = FXCollections.observableArrayList(appointmentRepository.findAll());
-        ListView<Appointment> seeAPPsLISTVIEW = new ListView<>(searchAPPsObservableList);
-        seeAPPsLISTVIEW.setPrefWidth(450);
+
 
         //------------ Asezarea celor create mai sus in pagina deschisa de aplicatie --------------
 
 
-        GridPane addingAppointmentGridpane = new GridPane();
 
         addingAppointmentGridpane.setVgap(1);
         addingAppointmentGridpane.setHgap(40);
-
         addingAppointmentGridpane.setPadding(new Insets(20, 20, 20, 20));
-
         addingAppointmentGridpane.add(nameLabel, 0, 0);
         addingAppointmentGridpane.add(nameTextField, 0, 1);
         addingAppointmentGridpane.add(phoneLabel, 0, 2);
@@ -243,29 +330,22 @@ public class FinalProjectApplication extends Application {
         addingAppointmentGridpane.add(goFromTextField, 0, 5);
         addingAppointmentGridpane.add(goToLabel, 0, 6);
         addingAppointmentGridpane.add(goToTextField, 0, 7);
-
-
         addingAppointmentGridpane.add(goingDateLabel, 1, 0);
         addingAppointmentGridpane.add(dateGoingDatePicker, 1, 1);
         addingAppointmentGridpane.add(addAppointmentButton, 1, 4);
-
         addingAppointmentGridpane.add(comingDateLabel, 2, 0);
         addingAppointmentGridpane.add(dateComingDatePicker, 2, 1);
-
         addingAppointmentGridpane.add(blankLabel2, 3, 6);// gol
         addingAppointmentGridpane.add(deleteLabelInfo, 3, 7);
         addingAppointmentGridpane.add(deleteAppointmentButton, 3, 9);
-
         addingAppointmentGridpane.add(blankLabel, 0, 8);  // gol
-
         addingAppointmentGridpane.add(listView, 1, 8, 2, 3);
-        addingAppointmentGridpane.add(updateAppointmentButton,3,8);
+        addingAppointmentGridpane.add(updateAppointmentButton, 3, 8);
         addingAppointmentGridpane.add(backToMainWindowButton1, 3, 10);
 
 
         //---------------------------------------------------------------------
-        GridPane principalWindowGridPane = new GridPane();
-        Label blankLabel4 = new Label("");
+
 
         principalWindowGridPane.setPadding(new Insets(40, 40, 40, 40));
         principalWindowGridPane.add(toAddingButton, 0, 2);
@@ -278,46 +358,41 @@ public class FinalProjectApplication extends Application {
         principalWindowGridPane.setPrefWidth(900);
         principalWindowGridPane.setPrefHeight(500);
         principalWindowGridPane.setAlignment(Pos.CENTER);
-
-
         principalWindowGridPane.add(principalTitleLabel, 0, 0);
 
-        Scene principalWindowScene = new Scene(principalWindowGridPane);
 
 
-        GridPane seeAppointmentsGridPane = new GridPane();
+
         seeAppointmentsGridPane.setVgap(1);
         seeAppointmentsGridPane.setHgap(10);
-
         seeAppointmentsGridPane.setPadding(new Insets(20, 20, 20, 20));
-
         seeAppointmentsGridPane.add(searchAppointmentLabel, 0, 0);
         seeAppointmentsGridPane.add(searchAppointmentsByDatePicker, 1, 0);
         seeAppointmentsGridPane.add(searchAppointmentButton, 3, 0);
-
         seeAppointmentsGridPane.add(seeAPPsLISTVIEW, 1, 1);
         seeAppointmentsGridPane.add(backToMainWindowButton, 3, 3);
         seeAppointmentsGridPane.add(exportButton, 0, 1);
-
         seeAppointmentsGridPane.add(showAllAppointmentsButton, 3, 1);
 
-        Scene searchAppointmentScene = new Scene(seeAppointmentsGridPane, 900, 500);
-
-        Scene loginScene = new Scene(loginGridPane, 900, 500);
-
-
-        Scene AddingAppointmentScene = new Scene(addingAppointmentGridpane, 900, 500);
         stage.setScene(loginScene);
         stage.show();
 
 
         //--------------- Functionalitati butoane -----------------------------
 
-        toAddingButton.setOnAction(toAddingButtonAction -> {
-            stage.setScene(AddingAppointmentScene);
-        });
+        // Buton catre pagina de inregistrare
+        registerButton.setOnAction(rr -> stage.setScene(registerScene));
+        // Buton catre login page
+        backtologinButton.setOnAction(az -> stage.setScene(loginScene));
+        // Buton catre pagina de adaugare programari
+        toAddingButton.setOnAction(toAddingButtonAction -> stage.setScene(AddingAppointmentScene));
+        // Buton catre meniul prinicpal
+        backToMainWindowButton.setOnAction(goBackButtonAction -> stage.setScene(principalWindowScene));
+        // Buton catre meniul prinicpal
+        backToMainWindowButton1.setOnAction(goBackButtonAction -> stage.setScene(principalWindowScene));
 
 
+        // Buton catre pagina de cautare programari
         toSearchAppointmentsButton.setOnAction(seeAppointmentsButtonAction -> {
             int appointmentsCOUNT = (int) appointmentRepository.findAll().stream().count();
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Pana acum sunt " + appointmentsCOUNT + " persoane programate");
@@ -330,14 +405,7 @@ public class FinalProjectApplication extends Application {
             stage.setScene(searchAppointmentScene);
         });
 
-        backToMainWindowButton.setOnAction(goBackButtonAction -> {
-            stage.setScene(principalWindowScene);
-        });
-        backToMainWindowButton1.setOnAction(goBackButtonAction -> {
-            stage.setScene(principalWindowScene);
-        });
-
-
+        // Buton de afisare toate programarile valabile
         showAllAppointmentsButton.setOnAction(sh -> {
             searchAPPsObservableList.removeAll();
             seeAPPsLISTVIEW.setItems(searchAPPsObservableList);
@@ -345,40 +413,64 @@ public class FinalProjectApplication extends Application {
             seeAPPsLISTVIEW.setItems(searchAPPsObservableList);
         });
 
-        registerButton.setOnAction(rr -> {
-            stage.setScene(registerScene);
-        });
 
-        registerREGISTERButton.setOnAction(rgr -> {
+        // Button de inregistrare
+        registerREGISTERButton.setOnAction(aasa -> {
+            if (passwordRegisterTXTField.getText().isEmpty() || usernameRegisterTXTField.getText().isEmpty() || emailRegisterTXTField.getText().isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Completati toate campurile");
+                alert.show();
+            } else {
+                stage.setScene(register2Scene);
+                Random random = new Random();
+                int codeVerify = random.nextInt(9999);
 
-            try {
+                sendMessageCode(codeVerify,emailRegisterTXTField.getText());
 
-                if (passwordRegisterTXTField.getText().isEmpty() || usernameRegisterTXTField.getText().isEmpty()) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "Completati toate campurile");
-                    alert.show();
-                } else {
-                    User user = new User();
-                    user.setUsername(usernameRegisterTXTField.getText());
-                    user.setPassword(passwordRegisterTXTField.getText());
+                finishRegisterButton.setOnAction(rgr -> {
+                    String codeVerifyString = String.valueOf(codeVerify);
                     try {
-                        userList.add(user);
-                        userRepository.save(user);
-                        stage.setScene(loginScene);
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION,"Utilizator adaugat cu succes !");
-                        alert.show();
-                    }catch (Exception e){
-                        Alert alert = new Alert(Alert.AlertType.ERROR,"Nume de utilizator deja folosit");
-                        alert.show();
+
+                        if (passwordRegisterTXTField.getText().isEmpty() || usernameRegisterTXTField.getText().isEmpty() || emailRegisterTXTField.getText().isEmpty()) {
+                            Alert alert = new Alert(Alert.AlertType.WARNING, "Completati toate campurile");
+                            alert.show();
+                        } else {
+                            User user = new User();
+                            user.setUsername(usernameRegisterTXTField.getText());
+                            user.setPassword(passwordRegisterTXTField.getText());
+                            user.setEmail(emailRegisterTXTField.getText());
+
+
+
+
+                            if (register2TXTFieldCODE.getText().equals(codeVerifyString)) {
+                                try {
+                                    userList.add(user);
+                                    userRepository.save(user);
+                                    stage.setScene(loginScene);
+                                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "Utilizator adaugat cu succes !");
+                                    alert.show();
+                                } catch (Exception e) {
+                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Nume de utilizator deja folosit");
+                                    alert.show();
+                                    e.printStackTrace();
+                                }
+                                usernameRegisterTXTField.clear();
+                                passwordRegisterTXTField.clear();
+                                stage.setScene(loginScene);
+                            }else
+                            {
+                                Alert alert = new Alert(Alert.AlertType.WARNING,"Cod invalid");
+                                alert.show();
+                            }
+                        }
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    usernameRegisterTXTField.clear();
-                    passwordRegisterTXTField.clear();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+                });
             }
         });
 
+        // Buton logare
         loginButton.setOnAction(lgl -> {
             AtomicBoolean found = new AtomicBoolean(false);
             try {
@@ -416,7 +508,7 @@ public class FinalProjectApplication extends Application {
                     try {
                         Alert alert = new Alert(Alert.AlertType.WARNING, "Compleltati toate campurile obligatorii");
                         alert.show();
-                        throw new Exception("Campuri goale");
+                        throw new EmptyFields("Campuri goale");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -460,9 +552,7 @@ public class FinalProjectApplication extends Application {
 
             try {
                 try {
-                    listView.setOnMouseClicked(mouseEvent -> {
-                        listView.getSelectionModel().getSelectedItem().setClient(client);
-                    });
+                    listView.setOnMouseClicked(mouseEvent -> listView.getSelectionModel().getSelectedItem().setClient(client));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -499,23 +589,14 @@ public class FinalProjectApplication extends Application {
 
         });
 
-        listView.setOnMouseClicked(msevnt ->{
 
-            dateGoingDatePicker.getEditor().setText(listView.getSelectionModel().getSelectedItem().getDateGoing().toString());
-            dateComingDatePicker.setValue(listView.getSelectionModel().getSelectedItem().getDateComing());
-            nameTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getFullName());
-            phoneTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getPhoneNumber());
-            goFromTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getAppointment().getStartFrom());
-            goToTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getAppointment().getGoTo());
-        });
+        // Buton update Client
 
-
-        updateAppointmentButton.setOnAction(aaaa ->{
-            if (listView.getSelectionModel().getSelectedItem() == null){
-                Alert alert = new Alert(Alert.AlertType.WARNING,"Selectati un client");
+        updateAppointmentButton.setOnAction(aaaa -> {
+            if (listView.getSelectionModel().getSelectedItem() == null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Selectati un client");
                 alert.show();
-            }else
-            {
+            } else {
                 appointmentRepository.deleteById(listView.getSelectionModel().getSelectedItem().getId());
                 Client client = new Client();
                 Appointment appointment = new Appointment();
@@ -534,7 +615,6 @@ public class FinalProjectApplication extends Application {
                 listView.setItems(observableList);
 
 
-
                 nameTextField.clear();
                 phoneTextField.clear();
                 goFromTextField.clear();
@@ -549,11 +629,7 @@ public class FinalProjectApplication extends Application {
         });
 
 
-
-
-        //---------------------- Buton cautare programari pentru o anumita data ---------------------
-
-
+        //Buton cautare dupa data de plecare
         searchAppointmentButton.setOnAction(searchMethod -> {
 
             searchAPPsObservableList.removeAll();
@@ -564,7 +640,7 @@ public class FinalProjectApplication extends Application {
 
         });
 
-
+        // Buton export
         exportButton.setOnAction(exportButtonAction -> {
 
             try {
@@ -572,12 +648,57 @@ public class FinalProjectApplication extends Application {
                 Sheet spreadsheet = workbook.createSheet("sample");
 
                 Row row = spreadsheet.createRow(0);
+                row.createCell(0).setCellValue("Nume");
+                row.createCell(1).setCellValue("Telefon");
+                row.createCell(2).setCellValue("Plecare din");
+                row.createCell(3).setCellValue("Plecare catre");
+                row.createCell(4).setCellValue("Data plecarii");
+                row.createCell(5).setCellValue("Data intoarcerii");
+                int i;
+                for(i=0;i<searchAPPsObservableList.size();i++){
+                    row = spreadsheet.createRow(i+1);
+
+                    row.createCell(0).setCellValue(searchAPPsObservableList.get(i).getClient().getFullName());
+                    row.createCell(1).setCellValue(searchAPPsObservableList.get(i).getClient().getPhoneNumber());
+                    row.createCell(2).setCellValue(searchAPPsObservableList.get(i).getStartFrom());
+                    row.createCell(3).setCellValue(searchAPPsObservableList.get(i).getGoTo());
+                    row.createCell(4).setCellValue(searchAPPsObservableList.get(i).getDateGoing().toString());
+                    if(searchAPPsObservableList.get(i).getDateComing() != null) {
+                        row.createCell(5).setCellValue(searchAPPsObservableList.get(i).getDateComing().toString());
+                    }else {
+                        row.createCell(5).setCellValue("-");
+                    }
+                }
+
+                autoSizeColumns(workbook);
+
+                FileOutputStream fileOut = new FileOutputStream("Programari tarsin.xls");
+                workbook.write(fileOut);
+                fileOut.close();
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION,"Programarile au fost exportate. Verificati " +
+                        "folderul unde este aplicatia. ATENTIE ! Dupa fiecare export, fisierul va fi rescris, va " +
+                        "rugam printati sau salvati fisierul ca si copie daca doriti sa il pastrati");
+                alert.show();
+
 
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
+        });
+
+        // listview click pe event
+
+        listView.setOnMouseClicked(msevnt -> {
+
+            dateGoingDatePicker.getEditor().setText(listView.getSelectionModel().getSelectedItem().getDateGoing().toString());
+            dateComingDatePicker.setValue(listView.getSelectionModel().getSelectedItem().getDateComing());
+            nameTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getFullName());
+            phoneTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getPhoneNumber());
+            goFromTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getAppointment().getStartFrom());
+            goToTextField.setText(listView.getSelectionModel().getSelectedItem().getClient().getAppointment().getGoTo());
         });
 
 
