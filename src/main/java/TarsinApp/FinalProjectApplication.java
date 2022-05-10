@@ -543,16 +543,16 @@ public class FinalProjectApplication extends Application {
         //Buton Stergere Client
 
         deleteAppointmentButton.setOnAction(x -> {
-            Client client = new Client();
+            Appointment appointment = new Appointment();
 
             try {
                 try {
-                    listView.setOnMouseClicked(mouseEvent -> listView.getSelectionModel().getSelectedItem().setClient(client));
+                    appointment = listView.getSelectionModel().getSelectedItem();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                if (client.getFullName() != null) {
+                if (appointment.getId() == null) {
                     try {
                         Alert alert = new Alert(Alert.AlertType.WARNING, "Selectati un client");
                         alert.show();
