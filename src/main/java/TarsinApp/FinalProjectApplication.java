@@ -72,8 +72,9 @@ public class FinalProjectApplication extends Application {
     }
 
     // METODA de trimitere Email cu codul de verificare pentru inregistrarea unui nou User
-    public static void sendMessageCode(int x,String email) {
-        String sendTo = "boolnworld@gmail.com";
+    public static void sendMessageCode(int code, String email) {
+        String sendTo = email;
+        String sendFrom = "itschooltesting@gmail.com";
         String host = "smtp.gmail.com";
         Properties properties = System.getProperties();
 
@@ -92,11 +93,10 @@ public class FinalProjectApplication extends Application {
 
         try {
             MimeMessage message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(email));
+            message.setFrom(new InternetAddress(sendFrom));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(sendTo));
-            message.setSubject("Cod verificare");
-            message.setText("Buna ziua. Codul dumneavoastra de verificare este " + x + " . Va rugam sa il introduceti in " +
-                    "campul din aplicatie");
+            message.setSubject("Cod de activare");
+            message.setText("Acesta este codul de activare pentru aplicatia Tarsin Programari: " + code + " Va rugam sa il introduceti in aplicatie");
             System.out.println("sending...");
             Transport.send(message);
             System.out.println("Sent message successfully....");
@@ -106,7 +106,7 @@ public class FinalProjectApplication extends Application {
     }
 
     @Override
-    public void start(Stage stage)  {
+    public void start(Stage stage) {
         stage.setTitle("TARSIN Programari");
 
 
@@ -114,8 +114,6 @@ public class FinalProjectApplication extends Application {
         anchorPane.setPrefSize(10, 10);
 
         LocalDate today = LocalDate.now();
-
-
 
 
         // Stergere programari vechi la pornirea programului
@@ -163,8 +161,6 @@ public class FinalProjectApplication extends Application {
         Button toSearchAppointmentsButton = new Button("Vezi programari");
         Button backToMainWindowButton = new Button("Inapoi");
         Button backToMainWindowButton1 = new Button("Inapoi");
-
-
 
 
         // Labels
@@ -220,12 +216,10 @@ public class FinalProjectApplication extends Application {
 
         Scene searchAppointmentScene = new Scene(seeAppointmentsGridPane, 900, 500);
         Scene registerScene = new Scene(registerGridPane);
-        Scene register2Scene = new Scene(register2Gridpane,900,500);
+        Scene register2Scene = new Scene(register2Gridpane, 900, 500);
         Scene principalWindowScene = new Scene(principalWindowGridPane);
         Scene loginScene = new Scene(loginGridPane, 900, 500);
         Scene AddingAppointmentScene = new Scene(addingAppointmentGridpane, 900, 500);
-
-
 
 
         backToMainWindowButton1.autosize();
@@ -245,9 +239,6 @@ public class FinalProjectApplication extends Application {
         AnchorPane.setRightAnchor(backToMainWindowButton, 10.0);
         AnchorPane.setBottomAnchor(backToMainWindowButton1, 10.0);
         AnchorPane.setRightAnchor(backToMainWindowButton1, 10.0);
-
-
-
 
 
         //--------- LOGIN
@@ -285,38 +276,24 @@ public class FinalProjectApplication extends Application {
         registerGridPane.setAlignment(Pos.CENTER);
 
 
-
-
-
         //--------- register code
-
-
-
-
 
 
         finishRegisterButton.autosize();
 
 
-
-
         register2Gridpane.add(codeLabelRegister, 0, 0);
         register2Gridpane.add(register2TXTFieldCODE, 0, 1);
-        register2Gridpane.add(finishRegisterButton,0,3);
-        register2Gridpane.add(backtologinButton,0,4);
+        register2Gridpane.add(finishRegisterButton, 0, 3);
+        register2Gridpane.add(backtologinButton, 0, 4);
 
         register2Gridpane.setAlignment(Pos.CENTER);
-
-
-
 
 
         //-----------------------------------------------------------------------------------------
 
 
-
         //------------ Asezarea celor create mai sus in pagina deschisa de aplicatie --------------
-
 
 
         addingAppointmentGridpane.setVgap(1);
@@ -359,8 +336,6 @@ public class FinalProjectApplication extends Application {
         principalWindowGridPane.setPrefHeight(500);
         principalWindowGridPane.setAlignment(Pos.CENTER);
         principalWindowGridPane.add(principalTitleLabel, 0, 0);
-
-
 
 
         seeAppointmentsGridPane.setVgap(1);
@@ -416,57 +391,77 @@ public class FinalProjectApplication extends Application {
 
         // Button de inregistrare
         registerREGISTERButton.setOnAction(aasa -> {
+            int ok=0;
             if (passwordRegisterTXTField.getText().isEmpty() || usernameRegisterTXTField.getText().isEmpty() || emailRegisterTXTField.getText().isEmpty()) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Completati toate campurile");
                 alert.show();
             } else {
-                stage.setScene(register2Scene);
-                Random random = new Random();
-                int codeVerify = random.nextInt(9999);
-
-                sendMessageCode(codeVerify,emailRegisterTXTField.getText());
-
-                finishRegisterButton.setOnAction(rgr -> {
-                    String codeVerifyString = String.valueOf(codeVerify);
-                    try {
-
-                        if (passwordRegisterTXTField.getText().isEmpty() || usernameRegisterTXTField.getText().isEmpty() || emailRegisterTXTField.getText().isEmpty()) {
-                            Alert alert = new Alert(Alert.AlertType.WARNING, "Completati toate campurile");
-                            alert.show();
-                        } else {
-                            User user = new User();
-                            user.setUsername(usernameRegisterTXTField.getText());
-                            user.setPassword(passwordRegisterTXTField.getText());
-                            user.setEmail(emailRegisterTXTField.getText());
-
-
-
-
-                            if (register2TXTFieldCODE.getText().equals(codeVerifyString)) {
-                                try {
-                                    userList.add(user);
-                                    userRepository.save(user);
-                                    stage.setScene(loginScene);
-                                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "Utilizator adaugat cu succes !");
-                                    alert.show();
-                                } catch (Exception e) {
-                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Nume de utilizator deja folosit");
-                                    alert.show();
-                                    e.printStackTrace();
-                                }
-                                usernameRegisterTXTField.clear();
-                                passwordRegisterTXTField.clear();
-                                stage.setScene(loginScene);
-                            }else
-                            {
-                                Alert alert = new Alert(Alert.AlertType.WARNING,"Cod invalid");
-                                alert.show();
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                for (int i = 0; i < userList.size(); i++) {
+                    if (userList.get(i).getUsername().equals(usernameRegisterTXTField.getText())) {
+                        System.out.println("Username folosit");
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Username folosit. Alegeti alt username");
+                        alert.show();
+                        ok=1;
                     }
-                });
+
+                }
+                    if (ok==1) {
+                        System.out.println("Username folosit");
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Username folosit. Alegeti alt username");
+                        alert.show();
+                    } else {
+
+
+                        stage.setScene(register2Scene);
+                        Random random = new Random();
+                        int codeVerify = random.nextInt(9999);
+
+                        sendMessageCode(codeVerify, emailRegisterTXTField.getText());
+
+                        finishRegisterButton.setOnAction(rgr -> {
+                            String codeVerifyString = String.valueOf(codeVerify);
+                            try {
+
+                                if (passwordRegisterTXTField.getText().isEmpty() || usernameRegisterTXTField.getText().isEmpty() || emailRegisterTXTField.getText().isEmpty()) {
+                                    Alert alert = new Alert(Alert.AlertType.WARNING, "Completati toate campurile");
+                                    alert.show();
+                                } else {
+                                    User user = new User();
+                                    user.setUsername(usernameRegisterTXTField.getText());
+                                    user.setPassword(passwordRegisterTXTField.getText());
+                                    user.setEmail(emailRegisterTXTField.getText());
+
+
+                                    if (register2TXTFieldCODE.getText().equals(codeVerifyString)) {
+                                        try {
+                                            userList.add(user);
+                                            userRepository.save(user);
+                                            stage.setScene(loginScene);
+                                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Utilizator adaugat cu succes !");
+                                            alert.show();
+                                        } catch (Exception e) {
+                                            Alert alert = new Alert(Alert.AlertType.ERROR, "Nume de utilizator deja folosit");
+                                            alert.show();
+                                            e.printStackTrace();
+                                        }
+                                        usernameRegisterTXTField.clear();
+                                        passwordRegisterTXTField.clear();
+                                        emailRegisterTXTField.clear();
+                                        register2TXTFieldCODE.clear();
+                                        stage.setScene(loginScene);
+                                    } else {
+                                        Alert alert = new Alert(Alert.AlertType.WARNING, "Cod invalid");
+                                        alert.show();
+                                    }
+                                }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        });
+                    }
+
             }
         });
 
@@ -655,17 +650,17 @@ public class FinalProjectApplication extends Application {
                 row.createCell(4).setCellValue("Data plecarii");
                 row.createCell(5).setCellValue("Data intoarcerii");
                 int i;
-                for(i=0;i<searchAPPsObservableList.size();i++){
-                    row = spreadsheet.createRow(i+1);
+                for (i = 0; i < searchAPPsObservableList.size(); i++) {
+                    row = spreadsheet.createRow(i + 1);
 
                     row.createCell(0).setCellValue(searchAPPsObservableList.get(i).getClient().getFullName());
                     row.createCell(1).setCellValue(searchAPPsObservableList.get(i).getClient().getPhoneNumber());
                     row.createCell(2).setCellValue(searchAPPsObservableList.get(i).getStartFrom());
                     row.createCell(3).setCellValue(searchAPPsObservableList.get(i).getGoTo());
                     row.createCell(4).setCellValue(searchAPPsObservableList.get(i).getDateGoing().toString());
-                    if(searchAPPsObservableList.get(i).getDateComing() != null) {
+                    if (searchAPPsObservableList.get(i).getDateComing() != null) {
                         row.createCell(5).setCellValue(searchAPPsObservableList.get(i).getDateComing().toString());
-                    }else {
+                    } else {
                         row.createCell(5).setCellValue("-");
                     }
                 }
@@ -676,11 +671,10 @@ public class FinalProjectApplication extends Application {
                 workbook.write(fileOut);
                 fileOut.close();
 
-                Alert alert = new Alert(Alert.AlertType.INFORMATION,"Programarile au fost exportate. Verificati " +
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Programarile au fost exportate. Verificati " +
                         "folderul unde este aplicatia. ATENTIE ! Dupa fiecare export, fisierul va fi rescris, va " +
                         "rugam printati sau salvati fisierul ca si copie daca doriti sa il pastrati");
                 alert.show();
-
 
 
             } catch (Exception e) {
